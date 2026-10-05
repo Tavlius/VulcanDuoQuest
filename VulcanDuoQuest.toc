@@ -1,0 +1,20 @@
+## Interface: 16001
+## Title: Vulcan DuoQuest
+## Notes: Your duo partner's quest log next to yours: objective progress, quests one of you is missing, and a warning before you leave town. Display only; shares a quest only when you click Share, press its key or type /dq share.
+## Author: Tavlius
+## Version: @project-version@
+## IconTexture: Interface\AddOns\VulcanDuoQuest\Media\icon
+## AddonCompartmentFunc: VulcanDuoQuest_OnAddonCompartmentClick
+## SavedVariables: VulcanDuoQuestDB
+## SavedVariablesPerCharacter: VulcanDuoQuestCharDB
+
+Util.lua
+DuoCore.lua
+Core.lua
+Quests.lua
+Sync.lua
+Compare.lua
+Warn.lua
+UI.lua
+Commands.lua
+Persist.lua

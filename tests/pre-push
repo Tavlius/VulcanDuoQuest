@@ -1,0 +1,23 @@
+#!/bin/sh
+# Installed by tests/init_repo.sh. Refuses the push unless the personal-data guard
+# passes on the working tree and on the whole history (identities included).
+cd "$(git rev-parse --show-toplevel)" || exit 1
+PY=
+for c in python3 python py; do
+  if "$c" -c "import sys" >/dev/null 2>&1; then PY=$c; break; fi
+done
+if [ -z "$PY" ]; then
+  echo "pre-push: no working Python found, so the personal-data guard can't run. Push refused." >&2
+  exit 1
+fi
+# git passes one line per pushed ref: <local ref> <local id> <remote ref> <remote id>.
+# The pushed commits are scanned too: one may be something no branch or tag points to
+# (a raw id, HEAD@{1}, a stash). An all-zero id is a deletion.
+revs=
+while read -r lref lsha rref rsha; do
+  case "$lsha" in *[!0]*) revs="$revs $lsha" ;; esac
+done
+# shellcheck disable=SC2086
+"$PY" tests/guard_personal.py && "$PY" tests/guard_personal.py --history $revs && exit 0
+echo "pre-push: the personal-data guard failed (above). Push refused." >&2
+exit 1

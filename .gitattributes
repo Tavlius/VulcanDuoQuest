@@ -1,0 +1,5 @@
+# Every text file is stored with LF line endings (the TOC check and the packager expect them).
+* text=auto eol=lf
+*.tga binary
+*.png binary
+*.blp binary

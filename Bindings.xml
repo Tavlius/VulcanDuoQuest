@@ -1,0 +1,8 @@
+<Bindings>
+  <Binding name="VULCANDUOQUEST_TOGGLE" header="VULCANDUOQUEST" category="ADDONS">
+    VulcanDuoQuest_ToggleWindow()
+  </Binding>
+  <Binding name="VULCANDUOQUEST_SHARE" category="ADDONS">
+    VulcanDuoQuest_ShareNext()
+  </Binding>
+</Bindings>

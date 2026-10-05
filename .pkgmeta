@@ -1,0 +1,17 @@
+# BigWigs packager settings. The repository root is the add-on folder, so the zip
+# holds one VulcanDuoQuest/ folder; everything dev-only is left out.
+package-as: VulcanDuoQuest
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - tests
+  - AUDIT_LOG.md
+  - ci
+  - media-src
+  - .github
+  - .pkgmeta
+  - .gitignore
+  - .gitattributes

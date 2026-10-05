@@ -1,0 +1,67 @@
+name: Test and release
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      # Full history: the personal-data guard checks every commit, tag and ref.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with:
+          fetch-depth: 0
+      # The same pinned container that tests/docker.sh uses locally.
+      - name: Build the test container
+        run: docker build -t vulcan-test ci
+      - name: Run every test (lint, suites, mutation patterns, personal-data guard, package shape)
+        run: docker run --rm -e GITHUB_ACTIONS -v "$PWD:/src:ro" vulcan-test sh -c 'cp -r /src /w && cd /w && git config --global --add safe.directory /w && sh tests/run.sh'
+
+  release:
+    needs: test
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with:
+          fetch-depth: 0
+      # The packager quietly skips an upload when a token or project ID is missing (or
+      # 0), so everything it needs is checked here first, and the job fails loudly.
+      - name: Check release prerequisites
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          fail=0
+          [ -n "$CF_API_KEY" ] || { echo "::error::The CF_API_KEY repository secret isn't set."; fail=1; }
+          [ -n "$WAGO_API_TOKEN" ] || { echo "::error::The WAGO_API_TOKEN repository secret isn't set."; fail=1; }
+          grep -Eq '^## X-Curse-Project-ID: [1-9][0-9]*$' VulcanDuoQuest.toc || { echo "::error::VulcanDuoQuest.toc has no real ## X-Curse-Project-ID line (a number, not 0)."; fail=1; }
+          grep -Eq '^## X-Wago-ID: [A-Za-z0-9]{6,}$' VulcanDuoQuest.toc || { echo "::error::VulcanDuoQuest.toc has no real ## X-Wago-ID line."; fail=1; }
+          echo "$GITHUB_REF_NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)\.[0-9]+)?$' || { echo "::error::Tag $GITHUB_REF_NAME isn't vX.Y.Z (or vX.Y.Z-alpha.N / -beta.N)."; fail=1; }
+          git merge-base --is-ancestor "$GITHUB_SHA" "origin/$DEFAULT_BRANCH" || { echo "::error::The tagged commit isn't on $DEFAULT_BRANCH."; fail=1; }
+          grep -Eq "^## ${GITHUB_REF_NAME}( |$)" CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## ${GITHUB_REF_NAME}' section."; fail=1; }
+          exit $fail
+      # The packager that ships is the one the tests prove: release.sh, pinned by commit
+      # and checksum inside the test container (ci/Dockerfile).
+      - name: Build the test container (it holds the pinned packager)
+        run: docker build -t vulcan-test ci
+      # The packager reports a skipped or failed upload, or a game-version fallback, only
+      # as a line in its log, so the log is checked afterwards (tests/check_upload_log.py).
+      - name: Package and upload to CurseForge, Wago and GitHub
+        shell: bash
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker run --rm -e CF_API_KEY -e WAGO_API_TOKEN -e GITHUB_OAUTH -e GITHUB_ACTIONS -e GITHUB_EVENT_NAME -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_OUTPUT=/dev/null -v "$PWD:/w" -w /w vulcan-test sh -c 'git config --global --add safe.directory /w && release.sh' 2>&1 | tee "$RUNNER_TEMP/packager.log"
+          python3 tests/check_upload_log.py "$RUNNER_TEMP/packager.log"
