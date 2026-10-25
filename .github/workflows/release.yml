@@ -37,13 +37,13 @@ jobs:
       # 0), so everything it needs is checked here first, and the job fails loudly.
       - name: Check release prerequisites
         env:
-          CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          CF_API_KEY: ${{ secrets.CF_API }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           fail=0
-          [ -n "$CF_API_KEY" ] || { echo "::error::The CF_API_KEY repository secret isn't set."; fail=1; }
-          [ -n "$WAGO_API_TOKEN" ] || { echo "::error::The WAGO_API_TOKEN repository secret isn't set."; fail=1; }
+          [ -n "$CF_API_KEY" ] || { echo "::error::The CF_API repository secret isn't set."; fail=1; }
+          [ -n "$WAGO_API_TOKEN" ] || { echo "::error::The WAGO_API repository secret isn't set."; fail=1; }
           grep -Eq '^## X-Curse-Project-ID: [1-9][0-9]*$' VulcanDuoQuest.toc || { echo "::error::VulcanDuoQuest.toc has no real ## X-Curse-Project-ID line (a number, not 0)."; fail=1; }
           grep -Eq '^## X-Wago-ID: [A-Za-z0-9]{6,}$' VulcanDuoQuest.toc || { echo "::error::VulcanDuoQuest.toc has no real ## X-Wago-ID line."; fail=1; }
           echo "$GITHUB_REF_NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)\.[0-9]+)?$' || { echo "::error::Tag $GITHUB_REF_NAME isn't vX.Y.Z (or vX.Y.Z-alpha.N / -beta.N)."; fail=1; }
@@ -59,8 +59,8 @@ jobs:
       - name: Package and upload to CurseForge, Wago and GitHub
         shell: bash
         env:
-          CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          CF_API_KEY: ${{ secrets.CF_API }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
         run: |
           docker run --rm -e CF_API_KEY -e WAGO_API_TOKEN -e GITHUB_OAUTH -e GITHUB_ACTIONS -e GITHUB_EVENT_NAME -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_OUTPUT=/dev/null -v "$PWD:/w" -w /w vulcan-test sh -c 'git config --global --add safe.directory /w && release.sh' 2>&1 | tee "$RUNNER_TEMP/packager.log"
