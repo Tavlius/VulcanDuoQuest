@@ -120,7 +120,7 @@ static('the prerequisites are checked before packaging',
 static('the release job builds the test container (the pinned packager)',
        WF.count('run: docker build -t vulcan-test ci') == 2)
 static('the packaging step runs in bash (so a failing packager fails the pipe)', 'shell: bash' in pkg)
-for k, v in (('CF_API_KEY', 'secrets.CF_API_KEY'), ('WAGO_API_TOKEN', 'secrets.WAGO_API_TOKEN'), ('GITHUB_OAUTH', 'secrets.GITHUB_TOKEN')):
+for k, v in (('CF_API_KEY', 'secrets.CF_API'), ('WAGO_API_TOKEN', 'secrets.WAGO_API'), ('GITHUB_OAUTH', 'secrets.GITHUB_TOKEN')):
     static('the packaging step gets %s from %s' % (k, v), ('%s: ${{ %s }}' % (k, v)) in pkg)
     static('the container gets %s' % k, ('-e %s ' % k) in pkg)
 static("release.sh runs with no arguments (nothing like -d or -L that skips uploads)", re.search(r"&& release\.sh'", pkg) is not None)
