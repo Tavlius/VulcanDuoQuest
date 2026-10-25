@@ -2,6 +2,8 @@
 ## Title: Vulcan DuoQuest
 ## Notes: Your duo partner's quest log next to yours: objective progress, quests one of you is missing, and a warning before you leave town. Display only; shares a quest only when you click Share, press its key or type /dq share.
 ## Author: Tavlius
+## X-Curse-Project-ID: 1765659
+## X-Wago-ID: QKyqy7K7
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\VulcanDuoQuest\Media\icon
 ## AddonCompartmentFunc: VulcanDuoQuest_OnAddonCompartmentClick
